@@ -46,3 +46,30 @@ This weekend, I built an 'Omni-Agent' using LangChain, FastAPI, Qdrant, and Post
 Instead of forcing every query through a vector search, my LangChain Agent dynamically routes the user's question: if it's a policy question, it searches the Vector DB. If it's a live status question, it safely generates and executes a SQL query against Postgres.
 
 Here is a deep dive into how I built the LangChain routing logic to prevent SQL injection and hallucination... [Link to GitHub]"
+
+## 🚀 How to Run
+
+1. **Clone the repo:**
+   ```bash
+   git clone https://github.com/ntjrrvarma/omni-agent.git
+   cd omni-agent
+   ```
+
+2. **Set up environment:**
+   - Copy `.env` and add your Google Gemini API key
+   - Ensure Docker is installed
+
+3. **Launch the system:**
+   ```bash
+   docker-compose up --build
+   ```
+
+4. **Access the interfaces:**
+   - Frontend (Streamlit): http://localhost:8501
+   - Backend API: http://localhost:8000/docs (FastAPI docs)
+
+5. **Test queries:**
+   - "What is the current temperature of Freezer Unit 404?"
+   - "What is the standard operating procedure for a freezer failure?"
+
+The system will automatically route queries to the appropriate database!
