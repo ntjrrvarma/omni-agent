@@ -1,6 +1,8 @@
-from langchain.agents import create_react_agent, AgentExecutor
-from langchain.memory import ConversationBufferMemory
+from langchain.agents import AgentExecutor
+from langchain.agents.react.agent import create_react_agent
 from langchain_core.prompts import PromptTemplate
+from langchain_core.tools import Tool
+from langchain.memory import ConversationBufferMemory
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -25,6 +27,7 @@ db = SQLDatabase(engine)
 
 # Setup Qdrant collection and vectorstore
 def setup_vector_db():
+    global vectorstore
     collections = qdrant_client.get_collections().collections
     collection_names = [c.name for c in collections]
     
@@ -34,12 +37,11 @@ def setup_vector_db():
             vectors_config=VectorParams(size=768, distance=Distance.COSINE),
         )
         
-        loader = TextLoader("../data/sop.txt")  # Adjust path for Docker
+        loader = TextLoader("./data/sop.txt")
         documents = loader.load()
         text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
         docs = text_splitter.split_documents(documents)
         
-        global vectorstore
         vectorstore = Qdrant.from_documents(
             docs,
             embeddings,
@@ -48,7 +50,6 @@ def setup_vector_db():
         )
     else:
         # Collection exists, just connect to it
-        global vectorstore
         vectorstore = Qdrant(
             client=qdrant_client,
             collection_name="compliance_manuals",
@@ -59,7 +60,7 @@ def setup_vector_db():
 setup_vector_db()
 
 # 1. Initialize the LLM (The Brain)
-llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash-latest", temperature=0)
+llm = ChatGoogleGenerativeAI(model="gemini-flash-latest", temperature=0)
 
 # 2. Define our Tools (The Hands)
 def search_compliance_manuals(query: str) -> str:
@@ -87,30 +88,21 @@ tools = sql_tools + [
 # 4. Initialize the Agent with memory
 memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
-# Create the agent
-agent = create_react_agent(
-    llm=llm,
-    tools=tools,
-    prompt=PromptTemplate.from_template(
-        "You are Omni-Agent, an enterprise AI assistant that routes queries between live telemetry databases and compliance manuals.\n\n"
-        "Available tools:\n{tools}\n\n"
-        "Use the sql_db_query tool for questions about current status, live data, or telemetry.\n"
-        "Use the sql_db_schema tool to understand database structure.\n"
-        "Use the sql_db_list_tables tool to see available tables.\n"
-        "Use the Compliance_Vector_DB tool for questions about procedures, compliance, or manuals.\n\n"
-        "Chat History:\n{chat_history}\n\n"
-        "Question: {input}\n"
-        "Thought: {agent_scratchpad}"
-    )
+prompt = PromptTemplate.from_template(
+    "You are Omni-Agent, an enterprise AI assistant that routes queries between live telemetry databases and compliance manuals.\n\n"
+    "Available tools:\n{tools}\n\n"
+    "Tool names: {tool_names}\n\n"
+    "Use the sql_db_query tool for questions about current status, live data, or telemetry.\n"
+    "Use the sql_db_schema tool to understand database structure.\n"
+    "Use the sql_db_list_tables tool to see available tables.\n"
+    "Use the Compliance_Vector_DB tool for questions about procedures, compliance, or manuals.\n\n"
+    "Chat History:\n{chat_history}\n\n"
+    "Question: {input}\n"
+    "Thought: {agent_scratchpad}"
 )
 
-omni_agent = AgentExecutor(
-    agent=agent,
-    tools=tools,
-    memory=memory,
-    verbose=True,
-    handle_parsing_errors=True
-)
+agent = create_react_agent(llm, tools, prompt)
+omni_agent = AgentExecutor(agent=agent, tools=tools, memory=memory, verbose=True, handle_parsing_errors=True)
 
 def run_agent(user_query: str) -> str:
     """Executes the agent and returns the final answer."""
