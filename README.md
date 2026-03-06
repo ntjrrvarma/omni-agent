@@ -1,75 +1,183 @@
-🏗️ The Project: "Omni-Agent" (Enterprise Context Engine)
-To impress companies like AstraZeneca (Pharma/Compliance), Microsoft (Enterprise SaaS), and Staples (Supply Chain/Retail), you need a project that solves a universal corporate nightmare: Data Silos.
+# 🛡️ Omni-Agent: Enterprise Context Engine
 
-The Pitch: “Enterprise employees waste 20% of their day searching for answers across scattered databases and PDF manuals. I built an Agentic AI system that intelligently routes queries to either live SQL databases or historical Vector databases to give them an instant answer.”
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue)](https://docker.com)
+[![Python](https://img.shields.io/badge/Python-3.11+-green)](https://python.org)
+[![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
-The "God Tier" Architecture Blueprint:
-Frontend (The Interface): Streamlit (Python). It’s perfect for AI dashboards, looks clean, and takes 10% of the time to build compared to React.
+An intelligent AI agent that bridges the gap between live operational data and historical compliance documents, solving enterprise data silos with dynamic query routing.
 
-Backend (The Engine): FastAPI. Lightning fast, handles the API requests.
+## 🎯 Problem Solved
 
-The Brain (LangChain): Runs inside FastAPI. It uses an Agent with two specific tools:
+Enterprise employees waste **20% of their workday** searching across scattered databases and PDF manuals. Traditional RAG systems only handle unstructured data. Omni-Agent intelligently routes queries to the right data source: **live SQL databases** for real-time status or **vector databases** for compliance procedures.
 
-Tool 1: Vector Search. Connects to Qdrant to search PDF documents.
+## 🏗️ Architecture
 
-Tool 2: SQL Query. Connects to Postgres to check live tabular data.
+```
+┌─────────────────┐    ┌─────────────────┐
+│   Streamlit UI  │────│   FastAPI       │
+│   (Frontend)    │    │   (Backend)     │
+└─────────────────┘    └─────────────────┘
+                                │
+                    ┌───────────┼───────────┐
+                    │           │           │
+            ┌───────▼─────┐ ┌───▼─────┐ ┌───▼─────┐
+            │ LangChain   │ │ Qdrant  │ │ Postgres│
+            │ Agent       │ │ (Vector │ │ (SQL)   │
+            │             │ │ DB)     │ │         │
+            └─────────────┘ └─────────┘ └─────────┘
+```
 
-Databases:
+### Components
 
-Qdrant (Vector DB): Stores embeddings of PDF manuals (e.g., AstraZeneca GxP compliance docs, or Staples supply chain guidelines).
+- **Frontend**: Streamlit chat interface for natural language queries
+- **Backend**: FastAPI REST API with LangChain agent orchestration
+- **Agent Brain**: LangChain ZERO_SHOT_REACT_DESCRIPTION agent with custom tools
+- **Vector DB**: Qdrant for semantic search of compliance documents
+- **SQL DB**: PostgreSQL for live operational data
+- **Infrastructure**: Docker Compose for complete containerization
 
-Postgres (Relational DB): Stores live dummy data (e.g., Live server status, or current warehouse inventory levels).
+## ✨ Features
 
-Infrastructure: Docker Compose spins all 4 layers up instantly.
+- 🤖 **Intelligent Routing**: Agent automatically determines query type and routes to appropriate database
+- 🔍 **Vector Search**: Semantic search through compliance manuals and SOPs
+- 🗃️ **SQL Queries**: Safe execution of live data queries
+- 🐳 **Containerized**: One-command deployment with Docker
+- 📊 **Real-time Data**: Live telemetry integration
+- 📋 **Compliance Ready**: GxP and enterprise compliance focused
+- 🚀 **Production Ready**: Health checks, error handling, and logging
 
-🎬 How it plays out in an Interview (The Flex)
-Imagine you are in the Microsoft or Staples interview. You open your laptop and show them the Streamlit UI.
+## 🛠️ Tech Stack
 
-You type Query 1: "What is the standard operating procedure for a freezer failure?"
+- **AI/ML**: LangChain, Google Gemini 1.5 Flash
+- **Backend**: FastAPI, Uvicorn
+- **Frontend**: Streamlit
+- **Databases**: Qdrant (Vector), PostgreSQL (Relational)
+- **Embeddings**: Google Generative AI Embeddings
+- **Infrastructure**: Docker, Docker Compose
+- **Language**: Python 3.11+
 
-What LangChain does: The Agent realizes this is a policy question. It uses the Vector DB Tool, searches Qdrant for the PDF manual, and generates an answer.
+## 🚀 Quick Start
 
-You type Query 2: "What is the current temperature of Freezer Unit 404?"
+### Prerequisites
 
-What LangChain does: The Agent realizes this requires live data. It ignores the Vector DB, uses the SQL Tool, queries your Postgres database, and returns: "Freezer 404 is currently at -70°C."
+- Docker & Docker Compose
+- Google Gemini API key (free from [Google AI Studio](https://makersuite.google.com/app/apikey))
 
-The Kill Shot (Why they hire you):
-"I didn't just build a chat wrapper. I used LangChain to build a dynamic reasoning engine. In a company like yours, you have live operational data (Postgres) and static compliance data (PDFs/Qdrant). This architecture proves I can securely bridge GenAI with both."
+### Installation
 
-💼 The LinkedIn Post Strategy
-When we finish this, your post will look like this:
-
-"Retrieval-Augmented Generation (RAG) is great, but it's not enough for enterprise scale. A real business needs AI that can query live SQL databases AND search unstructured PDFs simultaneously.
-
-This weekend, I built an 'Omni-Agent' using LangChain, FastAPI, Qdrant, and Postgres, fully containerized with Docker.
-
-Instead of forcing every query through a vector search, my LangChain Agent dynamically routes the user's question: if it's a policy question, it searches the Vector DB. If it's a live status question, it safely generates and executes a SQL query against Postgres.
-
-Here is a deep dive into how I built the LangChain routing logic to prevent SQL injection and hallucination... [Link to GitHub]"
-
-## 🚀 How to Run
-
-1. **Clone the repo:**
+1. **Clone the repository**
    ```bash
    git clone https://github.com/ntjrrvarma/omni-agent.git
    cd omni-agent
    ```
 
-2. **Set up environment:**
-   - Copy `.env` and add your Google Gemini API key
-   - Ensure Docker is installed
+2. **Configure environment**
+   ```bash
+   cp .env.example .env  # If exists, or edit .env
+   # Add your GOOGLE_API_KEY to .env
+   ```
 
-3. **Launch the system:**
+3. **Launch the system**
    ```bash
    docker-compose up --build
    ```
 
-4. **Access the interfaces:**
-   - Frontend (Streamlit): http://localhost:8501
-   - Backend API: http://localhost:8000/docs (FastAPI docs)
+4. **Access the application**
+   - **Web Interface**: http://localhost:8501
+   - **API Documentation**: http://localhost:8000/docs
+   - **API Health**: http://localhost:8000/
 
-5. **Test queries:**
-   - "What is the current temperature of Freezer Unit 404?"
-   - "What is the standard operating procedure for a freezer failure?"
+## 💬 Usage Examples
 
-The system will automatically route queries to the appropriate database!
+### Query Routing in Action
+
+**Live Data Query:**
+```
+User: "What's the current temperature of Freezer Unit 404?"
+Agent: Routes to PostgreSQL → "Freezer 404 is currently -72°C. Status: Optimal."
+```
+
+**Compliance Query:**
+```
+User: "What is the SOP for freezer failure?"
+Agent: Routes to Qdrant → Returns relevant sections from compliance manuals
+```
+
+### API Usage
+
+```python
+import requests
+
+response = requests.post("http://localhost:8000/ask",
+                        json={"question": "What is the current server status?"})
+print(response.json())
+```
+
+## 📁 Project Structure
+
+```
+omni-agent/
+├── backend/                 # FastAPI backend
+│   ├── agent.py            # LangChain agent & tools
+│   ├── main.py             # API endpoints
+│   ├── requirements.txt    # Python dependencies
+│   └── Dockerfile          # Backend container
+├── frontend/               # Streamlit frontend
+│   ├── app.py              # Chat interface
+│   ├── requirements.txt    # Python dependencies
+│   └── Dockerfile          # Frontend container
+├── data/                   # Sample data & DB init
+│   ├── sop.txt            # Sample compliance document
+│   └── init.sql           # PostgreSQL seed data
+├── docker-compose.yml      # Multi-service orchestration
+├── .env                    # Environment variables
+└── README.md              # This file
+```
+
+## 🔧 Configuration
+
+### Environment Variables
+
+```bash
+# Database URLs
+DATABASE_URL=postgresql://admin:password123@localhost:5432/omnidb
+QDRANT_URL=http://localhost:6333
+
+# AI Model
+GOOGLE_API_KEY=your_gemini_api_key_here
+```
+
+### Customizing Data
+
+- **Documents**: Add PDF/TXT files to `data/` directory
+- **Database Schema**: Modify `data/init.sql` for custom tables
+- **Agent Tools**: Extend tools in `backend/agent.py`
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Built with [LangChain](https://langchain.com) for agent orchestration
+- Powered by [Google Gemini](https://ai.google.dev) for reasoning
+- Vector search via [Qdrant](https://qdrant.tech)
+- Containerization with [Docker](https://docker.com)
+
+## 📞 Contact
+
+**Your Name** - [LinkedIn](https://linkedin.com/in/yourprofile) - your.email@example.com
+
+Project Link: [https://github.com/ntjrrvarma/omni-agent](https://github.com/ntjrrvarma/omni-agent)
+
+---
+
+*Built to demonstrate enterprise-grade AI agent development with real database integration and intelligent query routing.*
