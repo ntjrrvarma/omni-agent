@@ -1,8 +1,12 @@
-from langchain.agents import initialize_agent, AgentType, Tool
+from langchain.agents import create_react_agent, AgentExecutor
+from langchain.memory import ConversationBufferMemory
+from langchain_core.prompts import PromptTemplate
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import Qdrant
+from langchain_community.agent_toolkits import SQLDatabaseToolkit
+from langchain_community.utilities import SQLDatabase
 from qdrant_client import QdrantClient
 from qdrant_client.models import Distance, VectorParams
 from sqlalchemy import create_engine, text
@@ -16,25 +20,40 @@ embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
 qdrant_client = QdrantClient(url=os.getenv("QDRANT_URL"))
 engine = create_engine(os.getenv("DATABASE_URL"))
 
+# Create SQLDatabase instance for toolkit
+db = SQLDatabase(engine)
+
 # Setup Qdrant collection and vectorstore
 def setup_vector_db():
-    qdrant_client.recreate_collection(
-        collection_name="compliance_manuals",
-        vectors_config=VectorParams(size=768, distance=Distance.COSINE),
-    )
+    collections = qdrant_client.get_collections().collections
+    collection_names = [c.name for c in collections]
     
-    loader = TextLoader("data/sop.txt")
-    documents = loader.load()
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-    docs = text_splitter.split_documents(documents)
-    
-    global vectorstore
-    vectorstore = Qdrant.from_documents(
-        docs,
-        embeddings,
-        url=os.getenv("QDRANT_URL"),
-        collection_name="compliance_manuals",
-    )
+    if "compliance_manuals" not in collection_names:
+        qdrant_client.create_collection(
+            collection_name="compliance_manuals",
+            vectors_config=VectorParams(size=768, distance=Distance.COSINE),
+        )
+        
+        loader = TextLoader("../data/sop.txt")  # Adjust path for Docker
+        documents = loader.load()
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+        docs = text_splitter.split_documents(documents)
+        
+        global vectorstore
+        vectorstore = Qdrant.from_documents(
+            docs,
+            embeddings,
+            url=os.getenv("QDRANT_URL"),
+            collection_name="compliance_manuals",
+        )
+    else:
+        # Collection exists, just connect to it
+        global vectorstore
+        vectorstore = Qdrant(
+            client=qdrant_client,
+            collection_name="compliance_manuals",
+            embeddings=embeddings,
+        )
 
 # Call setup
 setup_vector_db()
@@ -43,21 +62,6 @@ setup_vector_db()
 llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash-latest", temperature=0)
 
 # 2. Define our Tools (The Hands)
-def query_live_database(query: str) -> str:
-    """Queries the Postgres Database for live telemetry data."""
-    print(f"🕵️ AGENT THOUGHT: Routing to Postgres SQL Database for: {query}")
-    try:
-        # For demo, map natural queries to SQL
-        if "404" in query or "freezer" in query.lower():
-            with engine.connect() as conn:
-                result = conn.execute(text("SELECT temperature, status FROM freezers WHERE unit_id = '404'"))
-                row = result.fetchone()
-                if row:
-                    return f"Freezer 404 temperature is currently {row[0]}°C. Status: {row[1]}."
-        return "No data found for that query."
-    except Exception as e:
-        return f"Database error: {str(e)}"
-
 def search_compliance_manuals(query: str) -> str:
     """Searches the Qdrant Vector DB for PDF guidelines."""
     print(f"🕵️ AGENT THOUGHT: Routing to Qdrant Vector DB for: {query}")
@@ -67,13 +71,12 @@ def search_compliance_manuals(query: str) -> str:
     except Exception as e:
         return f"Vector search error: {str(e)}"
 
+# Create SQL toolkit
+sql_toolkit = SQLDatabaseToolkit(db=db, llm=llm)
+sql_tools = sql_toolkit.get_tools()
+
 # 3. Package the Tools for LangChain
-tools = [
-    Tool(
-        name="Live_Telemetry_DB",
-        func=query_live_database,
-        description="Use this tool ONLY when the user asks for current, live, or real-time status of systems, freezers, or servers."
-    ),
+tools = sql_tools + [
     Tool(
         name="Compliance_Vector_DB",
         func=search_compliance_manuals,
@@ -81,12 +84,31 @@ tools = [
     )
 ]
 
-# 4. Initialize the Agent
-omni_agent = initialize_agent(
-    tools=tools,
+# 4. Initialize the Agent with memory
+memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+
+# Create the agent
+agent = create_react_agent(
     llm=llm,
-    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-    verbose=True, # This prints the Agent's internal thoughts to the terminal!
+    tools=tools,
+    prompt=PromptTemplate.from_template(
+        "You are Omni-Agent, an enterprise AI assistant that routes queries between live telemetry databases and compliance manuals.\n\n"
+        "Available tools:\n{tools}\n\n"
+        "Use the sql_db_query tool for questions about current status, live data, or telemetry.\n"
+        "Use the sql_db_schema tool to understand database structure.\n"
+        "Use the sql_db_list_tables tool to see available tables.\n"
+        "Use the Compliance_Vector_DB tool for questions about procedures, compliance, or manuals.\n\n"
+        "Chat History:\n{chat_history}\n\n"
+        "Question: {input}\n"
+        "Thought: {agent_scratchpad}"
+    )
+)
+
+omni_agent = AgentExecutor(
+    agent=agent,
+    tools=tools,
+    memory=memory,
+    verbose=True,
     handle_parsing_errors=True
 )
 

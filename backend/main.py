@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from qdrant_client import QdrantClient
 
 # IMPORT OUR NEW AGENT
-from backend.agent import run_agent
+from agent import run_agent
 
 load_dotenv()
 

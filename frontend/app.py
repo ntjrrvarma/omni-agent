@@ -1,11 +1,15 @@
 import streamlit as st
 import requests
+import os
 
 # Set page config for a professional look
 st.set_page_config(page_title="Omni-Agent | SRE Copilot", page_icon="🤖", layout="centered")
 
 st.title("🛡️ Omni-Agent Enterprise Copilot")
 st.caption("Powered by LangChain, FastAPI, Qdrant, and PostgreSQL")
+
+# Get backend URL from environment, default to localhost for local dev
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
 
 # Initialize chat history in Streamlit session state
 if "messages" not in st.session_state:
@@ -32,7 +36,7 @@ if user_query:
         try:
             # Use backend service name in Docker
             response = requests.post(
-                "http://backend:8000/ask", 
+                f"{BACKEND_URL}/ask", 
                 json={"question": user_query}
             )
             
