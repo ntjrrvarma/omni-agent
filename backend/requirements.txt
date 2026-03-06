@@ -1,0 +1,11 @@
+fastapi==0.109.2
+uvicorn==0.27.1
+langchain==0.1.9
+langchain-core==0.1.26
+langchain-community==0.0.24
+langchain-google-genai==0.0.9  # We will use Gemini Free Tier for the brain
+qdrant-client==1.7.3
+sqlalchemy==2.0.27
+psycopg2-binary==2.9.9
+pypdf==4.0.2
+python-dotenv==1.0.1
