@@ -1,5 +1,4 @@
-from langchain.agents import AgentExecutor
-from langchain.agents.react.agent import create_react_agent
+from langchain.agents import create_react_agent
 from langchain_core.prompts import PromptTemplate
 from langchain_core.tools import Tool
 from langchain.memory import ConversationBufferMemory
@@ -60,7 +59,7 @@ def setup_vector_db():
 setup_vector_db()
 
 # 1. Initialize the LLM (The Brain)
-llm = ChatGoogleGenerativeAI(model="gemini-flash-latest", temperature=0)
+llm = ChatGoogleGenerativeAI(model="models/gemini-flash-latest", temperature=0)
 
 # 2. Define our Tools (The Hands)
 def search_compliance_manuals(query: str) -> str:
