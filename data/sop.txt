@@ -1,0 +1,16 @@
+Standard Operating Procedure for Freezer Management
+
+1. Temperature Monitoring:
+   - Freezers must maintain temperatures between -80°C and -60°C.
+   - Check temperatures daily.
+
+2. Failure Response:
+   - If temperature drops below -70°C, no immediate action required.
+   - If below -80°C, alert maintenance team.
+   - Document all failures in the log.
+
+3. Maintenance:
+   - Annual calibration required.
+   - Clean coils monthly.
+
+This document complies with GxP guidelines.

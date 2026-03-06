@@ -30,9 +30,9 @@ if user_query:
     # 2. Send query to our FastAPI Backend
     with st.spinner("Omni-Agent is thinking and routing your request..."):
         try:
-            # We use localhost:8000 because uvicorn is running on the same Codespace
+            # Use backend service name in Docker
             response = requests.post(
-                "http://localhost:8000/ask", 
+                "http://backend:8000/ask", 
                 json={"question": user_query}
             )
             
